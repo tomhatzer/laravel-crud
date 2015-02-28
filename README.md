@@ -6,19 +6,30 @@ a simple powerful artisan command to create crud for laravel in less than 5 mint
 
 
 
-> copy commands/crud/ dir to your laravel : app/commands/
+> copy the two files in Console/Commands dir to your laravel : app/Console/Commands/
 
-> open and edit app/start/artisan.php
-
-add these codes to end of the file
+> execute the following commands on commandline
 
 ```sh
-<?php
-Artisan::add(new CrudMock);
-Artisan::add(new CrudMake);
+php artisan make:console CrudMake --command=crud:make
+php artisan make:console CrudMock --command=crud:mock
 ```
 >  this registers artisan command to laravel
 
+> afterwards customize the following array in app/Console/Commands/Kernel.php like this
+
+```php
+	/**
+	 * The Artisan commands provided by your application.
+	 *
+	 * @var array
+	 */
+	protected $commands = [
+        'App\Console\Commands\CrudMake',
+        'App\Console\Commands\CrudMock',
+        'App\Console\Commands\Inspire',
+	];
+```
 
 then you should create your mock in order to build your crud.
 

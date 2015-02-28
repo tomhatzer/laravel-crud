@@ -1,6 +1,8 @@
 laravel5-CRUD
 ============
 
+WORK IN PROGRESS! Not yet working!!!
+
 a simple powerful artisan command to create crud for laravel in less than 5 mintues
 ----
 

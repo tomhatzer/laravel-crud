@@ -4,7 +4,8 @@ laravel5-CRUD
 a simple powerful artisan command to create crud for laravel in less than 5 mintues
 ----
 
-
+This code is based on the awesome work of vahidstar ( https://github.com/vahidstar/laravel-crud )
+----
 
 > copy the two files in Console/Commands dir to your laravel : app/Console/Commands/
 

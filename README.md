@@ -16,7 +16,7 @@ php artisan make:console CrudMock --command=crud:mock
 ```
 >  this registers artisan command to laravel
 
-> afterwards customize the following array in app/Console/Commands/Kernel.php like this
+afterwards customize the following array in app/Console/Commands/Kernel.php like this
 
 ```php
 	/**

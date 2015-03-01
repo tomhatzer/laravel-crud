@@ -8,7 +8,7 @@ a simple powerful artisan command to create crud for laravel in less than 5 mint
 
 > copy the two files in Console/Commands dir to your laravel : app/Console/Commands/
 
-> execute the following commands on commandline
+execute the following commands on commandline
 
 ```sh
 php artisan make:console CrudMake --command=crud:make

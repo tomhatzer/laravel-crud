@@ -1,22 +1,11 @@
-<?php
+<?php namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\InputArgument;
 
-/**
-* Simple CRUD Command for laravel
-*
-* @author Vahid Mahdiun
-*/
-
-class CrudMake extends Command
-{
-
-    /**
-     * The console command name.
-     *
-     * @var string
-     */
-    protected $name = 'crud:make';
+class CrudMake extends Command {
     protected $schema = "";
     protected $variable = "";
     protected $viewFolderName = "";
@@ -59,36 +48,59 @@ class CrudMake extends Command
      */
     protected $description = 'Create View , Controller [Resource] for CRUD';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+	/**
+	 * The console command name.
+	 *
+	 * @var string
+	 */
+	protected $name = 'crud:make';
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function fire()
-    {
-        $fileAddress = File::files($this->getPath("mocks"));
+    protected $filesystem;
+
+
+	/**
+	 * Create a new command instance.
+	 *
+	 * @return void
+	 */
+	public function __construct(Filesystem $filesys)
+	{
+		parent::__construct();
+
+        $this->filesystem = $filesys;
+	}
+
+	/**
+	 * Execute the console command.
+	 *
+	 * @return mixed
+	 */
+	public function fire()
+	{
+        $fileAddress = $this->filesystem->files($this->getPath("mocks"));
         foreach ($fileAddress as $file) {
             $className = basename($file, '.php');
-            if($this->checkModelExist($file)){
+            // Build Controller path
+            $controller = $this->getPath("Http/Controllers/").str_replace("Mock", "", $className."Controller.php");
+            // Also check if Controller for current Mock already exists and if so
+            // ask if it should be overridden
+            if($this->checkModelExist($file) && !$this->checkModelExist($controller)){
                 require_once($file);
                 $this->allMocks[] = $className;
+            } else {
+                if($this->confirm("Do you want to override CRUD for ".$className." ? [yes|no]", false)) {
+                    require_once($file);
+                    $this->allMocks[] = $className;
+                } else {
+                    $this->info("Skipped CRUD override for ".$className);
+                }
             }
         }
         foreach ($this->allMocks as $mock) {
             $this->initMock($mock);
         }
         $this->response(count($this->allMocks));
-    }
+	}
 
     protected function getPath($path)
     {
@@ -104,8 +116,8 @@ class CrudMake extends Command
         $this->validation = $mock::$validation;
         $this->variable = "$" . strtolower($mock::$modelName);
         $this->caption = strtolower($mock::$modelName);
-	$this->route   = strtolower($mock::$route);
-	$this->routeIndex   = strtolower($mock::$routeIndex);
+        $this->route   = strtolower($mock::$route);
+        $this->routeIndex   = strtolower($mock::$routeIndex);
         $this->createViewFolder();
         $this->createViewFiles();
         $this->createResource();
@@ -114,8 +126,8 @@ class CrudMake extends Command
     protected function createViewFolder()
     {
         $viewFolderName = $this->viewFolderName;
-        if (!File::isDirectory($this->getPath("views/" . $viewFolderName))) {
-            File::makeDirectory($this->getPath("views/" . $viewFolderName), $mode = 0777, true, true);
+        if (!$this->filesystem->isDirectory($this->getPath("../resources/views/" . $viewFolderName))) {
+            $this->filesystem->makeDirectory($this->getPath("../resources/views/" . $viewFolderName), $mode = 0777, true, true);
         }
     }
 
@@ -131,19 +143,19 @@ class CrudMake extends Command
 
     protected function viewShow()
     {
-        $showFileContent = File::get($this->getPath("commands/crud/template/view/show.crud"));
+        $showFileContent = $this->filesystem->get($this->getPath("Console/Commands/template//view/show.crud"));
         $list = $this->makeList($this->variable);
         $find = array(
             '{{caption}}', '{{showingList}}', '{{route/index}}','{{route/}}'
         );
         $replace = array(
-            $this->caption, 
-	    $list,
-	    $this->routeIndex,
-	    $this->route	
+            $this->caption,
+            $list,
+            $this->routeIndex,
+            $this->route
         );
         $content = $this->replaceString($find, $replace, $showFileContent);
-        File::put($this->getPath("views/{$this->viewFolderName}/") . "show.blade" . ".php", $content);
+        $this->filesystem->put($this->getPath("../resources/views/{$this->viewFolderName}/") . "show.blade" . ".php", $content);
     }
 
     protected function makeList($variable)
@@ -173,13 +185,13 @@ class CrudMake extends Command
     protected function viewIndex($viewFolderName, $model)
     {
 
-        $show = File::get($this->getPath("commands/crud/template/view/index.crud"));
+        $show = $this->filesystem->get($this->getPath("Console/Commands/template/view/index.crud"));
         $head = $this->buildHeaderTable();
         $body = $this->buildBodyTable();
         $search = array('{{caption}}', '{{variable}}', '{{head}}', '{{body}}','{{route/index}}','{{route/}}');
         $replace = array($this->caption, $this->caption, $head, $body,$this->routeIndex,$this->route);
         $content = str_replace($search, $replace, $show);
-        File::put($this->getPath("views/{$viewFolderName}/") . "index.blade" . ".php", $content);
+        $this->filesystem->put($this->getPath("../resources/views/{$viewFolderName}/") . "index.blade" . ".php", $content);
     }
 
     protected function buildHeaderTable()
@@ -219,7 +231,7 @@ class CrudMake extends Command
 
     protected function viewCreate($viewFolderName, $model)
     {
-        $create = File::get($this->getPath("commands/crud/template/view/create.crud"));
+        $create = $this->filesystem->get($this->getPath("Console/Commands/template/view/create.crud"));
         $form = "";
         $file = false;
         foreach ($this->schema as $fieldName => $value) {
@@ -241,7 +253,7 @@ class CrudMake extends Command
         $search = array('{{caption}}', '{{forms}}' , '{{file}}','{{route/index}}','{{route/}}');
         $replace = array($this->caption, $form, $fileValue,$this->routeIndex,$this->route);
         $content = str_replace($search, $replace, $create);
-        File::put($this->getPath("views/{$viewFolderName}/") . "create.blade" . ".php", $content);
+        $this->filesystem->put($this->getPath("../resources/views/{$viewFolderName}/") . "create.blade" . ".php", $content);
     }
 
     protected function replaceTitle($fieldName, $formTitle)
@@ -308,7 +320,7 @@ class CrudMake extends Command
 
     protected function viewEdit($viewFolderName, $model)
     {
-        $create = File::get($this->getPath("commands/crud/template/view/edit.crud"));
+        $create = $this->filesystem->get($this->getPath("Console/Commands/template/view/edit.crud"));
         $form = "";
         foreach ($this->schema as $fieldName => $value) {
             $formTitle = $this->replaceUnderScore(ucwords($fieldName));
@@ -328,7 +340,7 @@ class CrudMake extends Command
         $search = array('{{caption}}', '{{forms}}', '{{variable}}','{{route/index}}','{{route/}}');
         $replace = array($this->caption, $form, $this->variable,$this->routeIndex,$this->route	);
         $content = str_replace($search, $replace, $create);
-        File::put($this->getPath("views/{$viewFolderName}/") . "edit.blade" . ".php", $content);
+        $this->filesystem->put($this->getPath("../resources/views/{$viewFolderName}/") . "edit.blade" . ".php", $content);
     }
 
     protected function replaceFieldWithValue($fieldName, $fieldValue, $fieldType)
@@ -340,7 +352,7 @@ class CrudMake extends Command
 
     protected function createResource()
     {
-        $template   = File::get($this->getPath("commands/crud/template/resource.crud"));
+        $template   = $this->filesystem->get($this->getPath("Console/Commands/template/resource.crud"));
         $create     = $this->variable . ' = new ' . $this->modelName . ";" . $this->newline();
         $update     = $this->variable . ' = ' . $this->modelName . '::find($id);' . $this->newline();
         $validation = "";
@@ -363,7 +375,7 @@ class CrudMake extends Command
             '{{validationUpdate}}',
             '{{caption}}',
             '{{route/index}}',
-	    '{{route/}}'
+            '{{route/}}'
         );
 
         $replace = array(
@@ -377,8 +389,8 @@ class CrudMake extends Command
             $validation,
             $validationUpdate,
             $this->caption,
-	    $this->routeIndex,
-	    $this->route			
+            $this->routeIndex,
+            $this->route
         );
         $content = str_replace($search, $replace, $template);
         $this->checkControllerExist($content);
@@ -442,22 +454,22 @@ class CrudMake extends Command
     }
 
     protected function checkModelExist($modelPath){
-        if ( File::exists($modelPath)) return true;
+        if ( $this->filesystem->exists($modelPath)) return true;
         else                          return false;
     }
 
     protected function checkControllerExist($content)
     {
-        $controllerPath = $this->getPath("controllers/") . ucwords($this->controllerName) . ".php";
-        if (File::exists($controllerPath)) {
+        $controllerPath = $this->getPath("Http/Controllers/") . ucwords($this->controllerName) . ".php";
+        if ($this->filesystem->exists($controllerPath)) {
             if ($this->confirm("Are you sure you want to override the $this->controllerName ? [yes|no]", false)) {
-                File::put($controllerPath, $content);
+                $this->filesystem->put($controllerPath, $content);
             } else {
                 $this->error("operation is terminated");
                 die();
             }
         } else {
-            File::put($controllerPath, $content);
+            $this->filesystem->put($controllerPath, $content);
         }
     }
 
@@ -469,25 +481,24 @@ class CrudMake extends Command
             $this->line("CRUD was created");
     }
 
-    /**
-     * Get the console command arguments.
-     *
-     * @return array
-     */
-    protected function getArguments()
-    {
-        return array();
-    }
+	/**
+	 * Get the console command arguments.
+	 *
+	 * @return array
+	 */
+	protected function getArguments()
+	{
+		return [];
+	}
 
-    /**
-     * Get the console command options.
-     *
-     * @return array
-     */
-    protected function getOptions()
-    {
-        return array();
-    }
+	/**
+	 * Get the console command options.
+	 *
+	 * @return array
+	 */
+	protected function getOptions()
+	{
+		return [];
+	}
 
 }
-

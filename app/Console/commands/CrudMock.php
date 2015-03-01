@@ -52,7 +52,7 @@ class CrudMock extends Command {
         $this->checkDirectory();
         $template = $this->filesystem->get($this->getPath("Console/Commands/template/model.crud"));
         foreach ($models as $model) {
-            $model = ucwords($model);
+            $model = trim(ucwords($model));
             $content = $this->setTemplate($template, $model);
             $this->filesystem->put($this->getPath("mocks/Mock") . $model . ".php", $content);
         }

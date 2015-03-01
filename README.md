@@ -53,7 +53,7 @@ php artisan crud:mock user,company,category
 so you have the mock , let's take a look at it
 
 
-```sh
+```php
 <?php
 class MockUser {
 
@@ -80,7 +80,7 @@ each field should have it's own type
 
 you can use one of these types below
 
-```sh
+```php
 ["text", "hidden", "digit", "textarea", "password", "file", "email"]
 ```
 
@@ -90,14 +90,14 @@ if you want to show your fields in a specific page for example in index page [li
 
 other possible options
 
-```sh
+```php
 ["index", "edit", "show", "create"]
 ```
 notice that for more security we should not demonstrate some sensetive fiedls in everywhere for example password field.
 
 let us take a look at this example 
 
-```sh
+```php
 <?php
 class MockUser {
 
@@ -113,7 +113,7 @@ in this example password field will be demonstrated just in create page // when 
 
 other options for fields are 
 
-```sh
+```php
 ["hash", "deny"]
 ```
 
